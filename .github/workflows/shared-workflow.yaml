@@ -1,0 +1,181 @@
+name: Build Container Image
+on:
+  workflow_call:
+    inputs:
+      registry:
+        description: The ECR container image registry url
+        type: string
+        required: true
+      repository-name:
+        description: The container image repository name (without version tag)
+        type: string
+        required: true
+      role-to-assume:
+        description: The arn for the role to be used by this workflow
+        type: string
+        required: true
+      major-minor-version:
+        description: The major/minor version of the image that will be used to generate the full tag
+        type: string
+        required: false
+        default: "1.0"
+      docker-context:
+        description: The directory context for docker build
+        type: string
+        required: false
+        default: "."
+      title:
+        description: The title to be used for a container image label
+        type: string
+        required: false
+        default: ""
+      description:
+        description: The description to be used for a container image label
+        type: string
+        required: false
+        default: ""
+      authors:
+        description: The authors to be used for a container image label
+        type: string
+        required: false
+        default: ""
+      documentation-url:
+        description: The documentation url to be used for a container image label
+        type: string
+        required: false
+        default: ""
+      test-target:
+        description: A test-target for testing the dockerfile
+        type: string
+        required: false
+        default: ""
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_BUILDKIT: 1
+    permissions:
+      actions: write
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ inputs.role-to-assume }}
+          aws-region: us-east-2
+
+      - name: Docker Login
+        run: aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${{ inputs.registry }}
+
+      - name: Get next image tag
+        id: get-next-image-tag
+        shell: pwsh
+        run: |
+          # Get Next Image tag
+          $MajorMinorVersion = '${{ inputs.major-minor-version }}'
+          $RegistryName = '${{ inputs.registry }}'
+          $RepositoryName = ''${{ inputs.repository-name }}''
+          $tag_pattern = "$($MajorMinorVersion.Replace('.','\.'))\.\d+"
+          $tags = (aws ecr list-images --repository-name $RepositoryName | ConvertFrom-Json).imageIds.imageTag
+          $greatest_tag = $tags | ?{ $_ -match $tag_pattern } | %{ [Version]"$_" } | Sort-Object -Descending | Select -First 1
+          if (-Not $greatest_tag) {
+            $next_tag = [Version]"$($MajorMinorVersion).0"
+          }
+          else {
+            $next_tag = [Version]::new($greatest_tag.Major, $greatest_tag.Minor, $greatest_tag.Build + 1)
+          }
+          $next_image_name = "$RegistryName/$($RepositoryName):$next_tag"
+          Write-Host "::set-output name=next-tag::$next_tag"
+          Write-Host "::set-output name=next-image-name::$next_image_name"
+
+      - name: Test container image
+        if: ${{ inputs.test-target != '' }}
+        run: docker build --target ${{ inputs.test-target }} ${{ inputs.docker-context }}
+
+      - name: Build container image
+        run: docker build --tag ${{ steps.get-next-image-tag.outputs.next-image-name }} ${{ inputs.docker-context }}
+
+      - name: Docker Push
+        shell: pwsh
+        run: |
+          docker push ${{ steps.get-next-image-tag.outputs.next-image-name }}
+          Write-Output "::notice:: Published image ${{ steps.get-next-image-tag.outputs.next-image-name }}"
+
+      - name: Get image scan results
+        shell: pwsh
+        run: |
+          Function ConvertTo-Markdown {
+            [CmdletBinding()]
+            [OutputType([string])]
+            Param (
+                [Parameter(
+                    Mandatory = $true,
+                    Position = 0,
+                    ValueFromPipeline = $true
+                )]
+                [PSObject[]]$InputObject
+            )
+
+            Begin {
+                $items = @()
+                $columns = @{}
+            }
+
+            Process {
+                ForEach($item in $InputObject) {
+                    $items += $item
+
+                    $item.PSObject.Properties | %{
+                        if($_.Value -ne $null){
+                            if(-not $columns.ContainsKey($_.Name) -or $columns[$_.Name] -lt $_.Value.ToString().Length) {
+                                $columns[$_.Name] = $_.Value.ToString().Length
+                            }
+                        }
+                    }
+                }
+            }
+
+            End {
+                ForEach($key in $($columns.Keys)) {
+                    $columns[$key] = [Math]::Max($columns[$key], $key.Length)
+                }
+
+                $header = @()
+                ForEach($key in $columns.Keys) {
+                    $header += ('{0,-' + $columns[$key] + '}') -f $key
+                }
+                $header -join ' | '
+
+                $separator = @()
+                ForEach($key in $columns.Keys) {
+                    $separator += '-' * $columns[$key]
+                }
+                $separator -join ' | '
+
+                ForEach($item in $items) {
+                    $values = @()
+                    ForEach($key in $columns.Keys) {
+                        $values += ('{0,-' + $columns[$key] + '}') -f $item.($key)
+                    }
+                    $values -join ' | '
+                }
+            }
+          }
+
+          $RegistryName = '${{ inputs.registry }}'
+          $RepositoryName = ''${{ inputs.repository-name }}''
+          $Tag = '${{ steps.get-next-image-tag.outputs.next-tag }}'
+          aws ecr wait image-scan-complete --repository-name $RepositoryName --image-id imageTag=$tag
+          $scan_results = aws ecr describe-image-scan-findings --repository-name $RepositoryName --image-id imageTag=$tag | ConvertFrom-Json
+          if ($scan_results.imageScanFindings.findings.severity -contains 'HIGH' -or $scan_results.imageScanFindings.findings.severity -contains 'CRITICAL') {
+            Write-Output "::notice:: Critical or High vulnerabilites found in image"
+          }
+
+          $scan_results.imageScanFindings.findings `
+            | Select-Object @{n='CVE';e={ "[$($_.name)]($($_.uri))" }}, @{n='Severity';e={$_.severity}}, @{n='Description';e={$_.description.replace('|','\|')}} `
+            | ConvertTo-Markdown `
+            | Set-Content $env:GITHUB_STEP_SUMMARY
