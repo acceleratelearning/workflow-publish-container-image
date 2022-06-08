@@ -78,7 +78,7 @@ jobs:
           # Get Next Image tag
           $MajorMinorVersion = '${{ inputs.major-minor-version }}'
           $RegistryName = '${{ inputs.registry }}'
-          $RepositoryName = ''${{ inputs.repository-name }}''
+          $RepositoryName = '${{ inputs.repository-name }}'
           $tag_pattern = "$($MajorMinorVersion.Replace('.','\.'))\.\d+"
           $tags = (aws ecr list-images --repository-name $RepositoryName | ConvertFrom-Json).imageIds.imageTag
           $greatest_tag = $tags | ?{ $_ -match $tag_pattern } | %{ [Version]"$_" } | Sort-Object -Descending | Select -First 1
@@ -167,7 +167,7 @@ jobs:
           }
 
           $RegistryName = '${{ inputs.registry }}'
-          $RepositoryName = ''${{ inputs.repository-name }}''
+          $RepositoryName = '${{ inputs.repository-name }}'
           $Tag = '${{ steps.get-next-image-tag.outputs.next-tag }}'
           aws ecr wait image-scan-complete --repository-name $RepositoryName --image-id imageTag=$tag
           $scan_results = aws ecr describe-image-scan-findings --repository-name $RepositoryName --image-id imageTag=$tag | ConvertFrom-Json
