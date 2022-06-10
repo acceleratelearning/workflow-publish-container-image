@@ -73,7 +73,7 @@ jobs:
 
       - name: Get next image tag
         id: get-next-image-tag
-        uses: acceleratelearning/get-next-container-image-tag-action@main
+        uses: acceleratelearning/get-next-ecr-image-tag-action@main
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
