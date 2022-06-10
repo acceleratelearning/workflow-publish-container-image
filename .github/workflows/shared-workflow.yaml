@@ -77,7 +77,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
-          major-minor-version: ${{ inputs.major-minor-verion }}
+          major-minor-version: ${{ inputs.major-minor-version }}
 
       - name: Test container image
         if: ${{ inputs.test-target != '' }}
