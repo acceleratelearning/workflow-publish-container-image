@@ -50,7 +50,7 @@ on:
         required: false
         default: ""
     secrets:
-      GITHUB_TOKEN:
+      github-token:
         required: true
 jobs:
   build:
@@ -106,4 +106,4 @@ jobs:
         uses: acceleratelearning/publish-github-release-action@main
         with:
           version: ${{ steps.get-next-image-tag.outputs.next-tag }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.github-token }}
