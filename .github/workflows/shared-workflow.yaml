@@ -102,4 +102,4 @@ jobs:
       - name: Publish GitHub Release
         uses: acceleratelearning/publish-github-release-action@main
         with:
-          tag: ${{ steps.get-next-image-tag.outputs.next-tag }}
+          version: ${{ steps.get-next-image-tag.outputs.next-tag }}
