@@ -98,3 +98,8 @@ jobs:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
           tag: ${{ steps.get-next-image-tag.outputs.next-tag }}
+
+      - name: Publish GitHub Release
+        uses: acceleratelearning/publish-github-release-action@main
+        with:
+          tag: ${{ steps.get-next-image-tag.outputs.next-tag }}
