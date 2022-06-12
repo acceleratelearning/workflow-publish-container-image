@@ -1,4 +1,4 @@
-name: Build Container Image
+name: Publish Container Image
 on:
   workflow_call:
     inputs:
@@ -89,7 +89,7 @@ jobs:
       - name: Build container image
         run: docker build --tag ${{ steps.get-next-image-tag.outputs.next-image-name }} ${{ inputs.docker-context }}
 
-      - name: Docker Push
+      - name: Publish Container Image to ECR
         shell: pwsh
         run: |
           docker push ${{ steps.get-next-image-tag.outputs.next-image-name }}
