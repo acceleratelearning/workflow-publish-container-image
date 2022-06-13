@@ -105,5 +105,4 @@ jobs:
       - name: Publish GitHub Release
         uses: acceleratelearning/publish-github-release-action@main
         with:
-          version: ${{ steps.get-next-image-tag.outputs.next-tag }}
-          github-token: ${{ secrets.github-token }}
+          version: "${{ steps.get-next-image-tag.outputs.next-tag }}"
