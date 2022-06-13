@@ -52,8 +52,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      DOCKER_BUILDKIT: 1
     # permissions:
     #   actions: write
     #   contents: write
@@ -83,10 +81,25 @@ jobs:
 
       - name: Test container image
         if: ${{ inputs.test-target != '' }}
-        run: docker build --target ${{ inputs.test-target }} ${{ inputs.docker-context }}
+        uses: acceleratelearning/build-container-image-action@main
+        with:
+          image-name: ${{ steps.get-next-image-tag.outputs.next-image-name }}
+          docker-context: ${{ inputs.docker-context }}
+          title: ${{ inputs.title }}
+          description: ${{ inputs.description }}
+          authors: ${{ inputs.authors }}
+          documentation-url: ${{ inputs.documentation-url }}
+          test-target: ${{ inputs.test-target }}
 
       - name: Build container image
-        run: docker build --tag ${{ steps.get-next-image-tag.outputs.next-image-name }} ${{ inputs.docker-context }}
+        uses: acceleratelearning/build-container-image-action@main
+        with:
+          image-name: ${{ steps.get-next-image-tag.outputs.next-image-name }}
+          docker-context: ${{ inputs.docker-context }}
+          title: ${{ inputs.title }}
+          description: ${{ inputs.description }}
+          authors: ${{ inputs.authors }}
+          documentation-url: ${{ inputs.documentation-url }}
 
       - name: Publish Container Image to ECR
         shell: pwsh
