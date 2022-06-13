@@ -49,6 +49,10 @@ on:
         type: string
         required: false
         default: ""
+    secrets:
+      github-token:
+        description: The GITHUB_TOKEN for the calling workflow
+        required: true
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -103,3 +107,4 @@ jobs:
         uses: acceleratelearning/publish-github-release-action@main
         with:
           version: "${{ steps.get-next-image-tag.outputs.next-tag }}"
+          github-token: ${{ secrets.github-token }}
