@@ -60,7 +60,8 @@ jobs:
       DOCKER_BUILDKIT: 1
     permissions:
       actions: write
-      contents: read
+      contents: write
+      pull-requests: write
       id-token: write
     steps:
       - name: Checkout
