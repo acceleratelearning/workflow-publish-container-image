@@ -49,9 +49,6 @@ on:
         type: string
         required: false
         default: ""
-    secrets:
-      github-token:
-        required: true
 jobs:
   build:
     runs-on: ubuntu-latest
