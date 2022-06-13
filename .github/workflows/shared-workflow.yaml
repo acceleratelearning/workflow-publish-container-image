@@ -79,7 +79,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
-          major-minor-version: ${{ inputs.major-minor-version }}
+          major-minor-version: "${{ inputs.major-minor-version }}"
 
       - name: Test container image
         if: ${{ inputs.test-target != '' }}
@@ -99,7 +99,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
-          tag: ${{ steps.get-next-image-tag.outputs.next-tag }}
+          tag: "${{ steps.get-next-image-tag.outputs.next-tag }}"
 
       - name: Publish GitHub Release with write-all
         uses: acceleratelearning/publish-github-release-action@main
