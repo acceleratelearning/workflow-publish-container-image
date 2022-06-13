@@ -51,6 +51,7 @@ on:
         default: ""
       github-token:
         description: The GITHUB_TOKEN for the calling workflow
+        type: string
         required: true
 jobs:
   build:
