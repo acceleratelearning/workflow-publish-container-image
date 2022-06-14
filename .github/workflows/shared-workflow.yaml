@@ -49,6 +49,11 @@ on:
         type: string
         required: false
         default: ""
+      webhook-url:
+        description: A webhook for Google Space Notifications
+        type: string
+        required: false
+        default: ""
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -124,7 +129,7 @@ jobs:
         uses: acceleratelearning/google-space-notification-action@main
         with:
           title: "Container Image for ${{ inputs.repository-name }}"
-          webhookUrl: ${{ secrets.GOOGLE_SPACE_WEBHOOK }}
+          webhook-url: ${{ inputs.webhook-url }}
           version: "${{ steps.get-next-image-tag.outputs.next-tag }}"
           release-notes: "${{ steps.publish-release.outputs.release-notes }}"
           release-html-url: ${{ steps.publish-release.outputs.release-html-url }}
