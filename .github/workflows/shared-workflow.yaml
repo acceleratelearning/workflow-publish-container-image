@@ -126,6 +126,7 @@ jobs:
           version: "${{ steps.get-next-image-tag.outputs.next-tag }}"
 
       - name: Google Space Notification
+        if: ${{ inputs.webhook-url != '' }}
         uses: acceleratelearning/google-space-notification-action@main
         with:
           title: "Container Image for ${{ inputs.repository-name }}"
