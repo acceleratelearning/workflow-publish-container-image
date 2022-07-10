@@ -147,8 +147,8 @@ jobs:
         uses: acceleratelearning/action-update-kustomization-image@main
         with:
           github-repo: ${{ inputs.kustomization-github-repo }}
-          path: ${ inputs.kustomization-path }}
-          iamge-name: "${{ inputs.registry }}/${{ inputs.repository-name }}"
+          path: ${{ inputs.kustomization-path }}
+          image-name: "${{ inputs.registry }}/${{ inputs.repository-name }}"
           new-tag: "${{ steps.get-next-image-tag.outputs.next-tag }}"
           github-app-id: ${{ inputs.kustomization-github-app-id }}
           github-app-key: ${{ secrets.kustomization-github-app-key }}
