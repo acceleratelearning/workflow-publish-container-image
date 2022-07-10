@@ -49,9 +49,27 @@ on:
         type: string
         required: false
         default: ""
+      kustomization-github-repo:
+        description: The url for a GitHub repo with a kustomization that needs to be updated with the new image tag
+        type: string
+        required: false
+        default: ""
+      kustomization-path:
+        description: The path for the kustomization directory
+        type: string
+        required: false
+        default: ""
+      kustomization-github-app-id:
+        description: The PEM id of the GitHub app that will be used to update kustomization-github-repo
+        type: string
+        required: false
+        default: ""
     secrets:
       webhook-url:
         description: A webhook for Google Space Notifications
+        required: false
+      kustomization-github-app-key:
+        description: The PEM file contents for the GitHub app that will be used to update kustomization-github-repo
         required: false
 jobs:
   build:
@@ -87,13 +105,19 @@ jobs:
         if: ${{ inputs.test-target != '' }}
         uses: acceleratelearning/build-container-image-action@main
         with:
-          image-name: ${{ steps.get-next-image-tag.outputs.next-image-name }}
+          image-name: container-test
           docker-context: ${{ inputs.docker-context }}
           title: ${{ inputs.title }}
           description: ${{ inputs.description }}
           authors: ${{ inputs.authors }}
           documentation-url: ${{ inputs.documentation-url }}
           test-target: ${{ inputs.test-target }}
+
+      - name: Get Test Results
+        if: ${{ inputs.test-target != '' }}
+        run: |
+          docker run -it --rm container-test cat /testresults/TestResults.xml > TestResults.xml
+          cat TestResults.xml
 
       - name: Build container image
         uses: acceleratelearning/build-container-image-action@main
@@ -117,6 +141,17 @@ jobs:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
           tag: "${{ steps.get-next-image-tag.outputs.next-tag }}"
+
+      - name: Update Kustomization Image
+        if: ${{ inputs.kustomization-github-repo != '' }}
+        uses: acceleratelearning/action-update-kustomization-image@main
+        with:
+          github-repo: ${{ inputs.kustomization-github-repo }}
+          path: ${ inputs.kustomization-path }}
+          iamge-name: "${{ inputs.registry }}/${{ inputs.repository-name }}"
+          new-tag: "${{ steps.get-next-image-tag.outputs.next-tag }}"
+          github-app-id: ${{ inputs.kustomization-github-app-id }}
+          github-app-key: ${{ secrets.kustomization-github-app-key }}
 
       - name: Publish GitHub Release\
         id: publish-release
