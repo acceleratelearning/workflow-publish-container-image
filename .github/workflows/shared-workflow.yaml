@@ -95,7 +95,7 @@ jobs:
 
       - name: Get next image tag
         id: get-next-image-tag
-        uses: acceleratelearning/get-next-ecr-image-tag-action@main
+        uses: acceleratelearning/action-get-next-ecr-image-tag@main
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
@@ -103,7 +103,7 @@ jobs:
 
       - name: Test container image
         if: ${{ inputs.test-target != '' }}
-        uses: acceleratelearning/build-container-image-action@main
+        uses: acceleratelearning/action-build-container-image@main
         with:
           image-name: container-test
           docker-context: ${{ inputs.docker-context }}
@@ -120,7 +120,7 @@ jobs:
           cat TestResults.xml
 
       - name: Build container image
-        uses: acceleratelearning/build-container-image-action@main
+        uses: acceleratelearning/action-build-container-image@main
         with:
           image-name: ${{ steps.get-next-image-tag.outputs.next-image-name }}
           docker-context: ${{ inputs.docker-context }}
@@ -136,7 +136,7 @@ jobs:
           Write-Output "::notice:: Published image ${{ steps.get-next-image-tag.outputs.next-image-name }}"
 
       - name: Get image scan results
-        uses: acceleratelearning/get-ecr-image-scan-results-action@main
+        uses: acceleratelearning/action-get-ecr-image-scan-results@main
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
@@ -155,12 +155,12 @@ jobs:
 
       - name: Publish GitHub Release\
         id: publish-release
-        uses: acceleratelearning/publish-github-release-action@main
+        uses: acceleratelearning/action-publish-github-release@main
         with:
           version: "${{ steps.get-next-image-tag.outputs.next-tag }}"
 
       - name: Google Space Notification
-        uses: acceleratelearning/google-space-notification-action@main
+        uses: acceleratelearning/action-google-space-notification@main
         with:
           title: "Container Image for ${{ inputs.repository-name }}"
           webhook-url: ${{ secrets.webhook-url }}
