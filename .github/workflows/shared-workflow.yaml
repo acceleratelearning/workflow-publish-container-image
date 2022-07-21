@@ -91,6 +91,9 @@ on:
       kustomization-github-app-key:
         description: The PEM file contents for the GitHub app that will be used to update kustomization-github-repo
         required: false
+      helm-github-app-key:
+        description: The PEM file contents for the GitHub app that will be used to update kustomization-github-repo
+        required: false
 jobs:
   build:
     runs-on: ubuntu-latest
