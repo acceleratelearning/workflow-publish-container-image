@@ -84,6 +84,11 @@ on:
         type: string
         required: false
         default: ""
+      build-args:
+        description: Additional build args based to docker build
+        type: string
+        required: false
+        default: ""
     secrets:
       webhook-url:
         description: A webhook for Google Space Notifications
@@ -93,6 +98,9 @@ on:
         required: false
       helm-github-app-key:
         description: The PEM file contents for the GitHub app that will be used to update kustomization-github-repo
+        required: false
+      secret-build-args:
+        description: Additional build args based to docker build that are secret
         required: false
 jobs:
   build:
@@ -118,7 +126,7 @@ jobs:
 
       - name: Get next image tag
         id: get-next-image-tag
-        uses: acceleratelearning/get-next-ecr-image-tag-action@main
+        uses: acceleratelearning/action-get-next-ecr-image-tag@v1
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
@@ -126,7 +134,7 @@ jobs:
 
       - name: Test container image
         if: ${{ inputs.test-target != '' }}
-        uses: acceleratelearning/build-container-image-action@main
+        uses: acceleratelearning/action-build-container-image@v1
         with:
           image-name: container-test
           docker-context: ${{ inputs.docker-context }}
@@ -135,6 +143,8 @@ jobs:
           authors: ${{ inputs.authors }}
           documentation-url: ${{ inputs.documentation-url }}
           test-target: ${{ inputs.test-target }}
+          build-args: ${{ inputs.build-args }}
+          secret-build-args: ${{ secrets.secret-build-args }}
 
       - name: Get Test Results
         if: ${{ inputs.test-target != '' }}
@@ -143,7 +153,7 @@ jobs:
           cat TestResults.xml
 
       - name: Build container image
-        uses: acceleratelearning/build-container-image-action@main
+        uses: acceleratelearning/action-build-container-image@v1
         with:
           image-name: ${{ steps.get-next-image-tag.outputs.next-image-name }}
           docker-context: ${{ inputs.docker-context }}
@@ -159,7 +169,7 @@ jobs:
           Write-Output "::notice:: Published image ${{ steps.get-next-image-tag.outputs.next-image-name }}"
 
       - name: Get image scan results
-        uses: acceleratelearning/get-ecr-image-scan-results-action@main
+        uses: acceleratelearning/action-get-ecr-image-scan-results@v1
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
@@ -167,7 +177,7 @@ jobs:
 
       - name: Update Kustomization Image
         if: ${{ inputs.kustomization-github-repo != '' }}
-        uses: acceleratelearning/action-update-kustomization-image@main
+        uses: acceleratelearning/action-update-kustomization-image@v1
         with:
           github-repo: ${{ inputs.kustomization-github-repo }}
           path: ${{ inputs.kustomization-path }}
@@ -178,7 +188,7 @@ jobs:
 
       - name: Update Helm Values File
         if: ${{ inputs.helm-github-repo != '' }}
-        uses: acceleratelearning/action-update-helm-values-file@main
+        uses: acceleratelearning/action-update-helm-values-file@v1
         with:
           github-repo: ${{ inputs.helm-github-repo }}
           path: ${{ inputs.helm-values-path }}
@@ -189,12 +199,12 @@ jobs:
 
       - name: Publish GitHub Release\
         id: publish-release
-        uses: acceleratelearning/publish-github-release-action@main
+        uses: acceleratelearning/action-publish-github-release@v1
         with:
           version: "${{ steps.get-next-image-tag.outputs.next-tag }}"
 
       - name: Google Space Notification
-        uses: acceleratelearning/google-space-notification-action@main
+        uses: acceleratelearning/action-google-space-notification@v1
         with:
           title: "Container Image for ${{ inputs.repository-name }}"
           webhook-url: ${{ secrets.webhook-url }}
