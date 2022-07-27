@@ -161,6 +161,8 @@ jobs:
           description: ${{ inputs.description }}
           authors: ${{ inputs.authors }}
           documentation-url: ${{ inputs.documentation-url }}
+          build-args: ${{ inputs.build-args }}
+          secret-build-args: ${{ secrets.secret-build-args }}
 
       - name: Publish Container Image to ECR
         shell: pwsh
